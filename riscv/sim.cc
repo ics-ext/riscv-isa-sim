@@ -40,7 +40,8 @@ sim_t::sim_t(const cfg_t *cfg, bool halted,
              const char *log_path,
              bool dtb_enabled, const char *dtb_file,
              bool socket_enabled,
-             FILE *cmd_file) // needed for command line option --cmd
+             FILE *cmd_file, // needed for command line option --cmd
+             bool is_diff_ref)
   : htif_t(args),
     isa(cfg->isa(), cfg->priv()),
     cfg(cfg),
@@ -54,13 +55,15 @@ sim_t::sim_t(const cfg_t *cfg, bool halted,
     current_step(0),
     current_proc(0),
     debug(false),
-    is_diff_ref(false),
+    is_diff_ref(is_diff_ref),
     histogram_enabled(false),
     log(false),
     remote_bitbang(NULL),
     debug_module(this, dm_config)
 {
-  signal(SIGINT, &handle_signal);
+  if (is_diff_ref) {
+    signal(SIGINT, &handle_signal);
+  }
 
   sout_.rdbuf(std::cerr.rdbuf()); // debug output goes to stderr by default
 
@@ -107,6 +110,18 @@ sim_t::sim_t(const cfg_t *cfg, bool halted,
 
   // When running without using a dtb, skip the fdt-based configuration steps
   if (!dtb_enabled) return;
+
+  if (is_diff_ref) {
+    int i = 0;
+    procs[i]->set_mmu_capability(IMPL_MMU_SBARE);
+    unsigned max_xlen = procs[i]->get_max_xlen();
+    switch (max_xlen) {
+      case 32: procs[i]->set_mmu_capability(IMPL_MMU_SV32); break;
+      case 64: procs[i]->set_mmu_capability(IMPL_MMU_SV39); break;
+      default: std::cerr << "invalid max_xlen = " << max_xlen << std::endl; exit(1);
+    }
+    return;
+  }
 
   // Load dtb_file if provided, otherwise self-generate a dts/dtb
   make_dtb(dtb_file);
