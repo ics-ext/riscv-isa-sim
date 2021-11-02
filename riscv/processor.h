@@ -296,6 +296,8 @@ public:
   
   bool is_waiting_for_interrupt() { return in_wfi; };
 
+  void take_trap_public(trap_t& t, reg_t epc) { take_trap(t, epc); }
+
 private:
   const isa_parser_t * const isa;
   const cfg_t * const cfg;
