@@ -114,7 +114,7 @@ sim_t::sim_t(const cfg_t *cfg, bool halted,
   if (is_diff_ref) {
     int i = 0;
     procs[i]->set_mmu_capability(IMPL_MMU_SBARE);
-    unsigned max_xlen = procs[i]->get_max_xlen();
+    unsigned max_xlen = procs[i]->get_isa().get_max_xlen();
     switch (max_xlen) {
       case 32: procs[i]->set_mmu_capability(IMPL_MMU_SV32); break;
       case 64: procs[i]->set_mmu_capability(IMPL_MMU_SV39); break;
